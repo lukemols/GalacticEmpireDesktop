@@ -101,10 +101,10 @@ namespace GalacticEmpire
             if (GameWindow.ActualState == GameWindow.GameState.SYSTEM)
                 actualSpeed /= 256;
 
-            if (alpha <= MathHelper.PiOver2 || alpha > 3 * MathHelper.PiOver2)
+            if (alpha <= MathHelper.Pi)
                 modelRotation = alpha;
             else
-                modelRotation = alpha - MathHelper.PiOver2;
+                modelRotation = alpha - 2* MathHelper.Pi;
         }
 
         static public void Update()

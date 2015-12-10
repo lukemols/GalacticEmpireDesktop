@@ -188,7 +188,7 @@ namespace GalacticEmpire
             Color barColor;
             if(planet.Terrascore < 16)
                 barColor = Color.Red;
-            else if (planet.Terrascore < 32)
+            else if (planet.Terrascore < 24)
                 barColor = Color.Yellow;
             else
                 barColor = Color.LimeGreen;
