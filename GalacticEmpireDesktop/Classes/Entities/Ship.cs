@@ -26,10 +26,16 @@ namespace GalacticEmpire
         int speed;
         public int Speed { get { return speed; } }
 
-        public Ship(Vector3 initialPosition, int life = 500, int speed = 5)
+        public Ship(Vector3 initialPosition, int life = 500, int speed = 5, int maxLife = 500)
+            : this(initialPosition, initialPosition, life, speed, maxLife)
+        { }
+
+        public Ship(Vector3 initialPosition, Vector3 targetPosition, int life = 500, int speed = 5, int maxLife = 500)
         {
             position = initialPosition;
+            this.targetPosition = targetPosition;
             this.life = life;
+            this.maxLife = maxLife;
             this.speed = speed;
         }
 

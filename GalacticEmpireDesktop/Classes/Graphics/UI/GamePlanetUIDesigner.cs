@@ -8,11 +8,12 @@ namespace GalacticEmpire
 {
     static class GamePlanetUIDesigner
     {
+        public enum PanelState { WAIT, TERRAFORM, COLONIZE, COMMERCE, SPY, EVENTS, COMMERCIALROUTE, ATTACK, GIFT};
+
         static SpriteFont font;
         static Texture2D bar;
         static Texture2D buttonTexture;
         static Texture2D closeTexture;
-        static Texture2D foodIcon;
         static SpriteBatch spriteBatch;
 
         static List<Button> inhabitedButtons;
@@ -23,11 +24,14 @@ namespace GalacticEmpire
         static Texture2D rectangle;
         static Rectangle relativeScreen;
 
+        static PanelState state;
+        static int lastClickTime;
+
         static public void Load(Game game)
         {
             string GUIFolder = GraphicSettings.GetGUIFolder();
 
-            relativeScreen = new Rectangle(100, 100, GraphicSettings.ScreenBounds.Width - 100, GraphicSettings.ScreenBounds.Height - 100);
+            relativeScreen = new Rectangle(100, 100, GraphicSettings.ScreenBounds.Width - 200, GraphicSettings.ScreenBounds.Height - 200);
             spriteBatch = (SpriteBatch)game.Services.GetService(typeof(SpriteBatch));
             inhabitedButtons = new List<Button>();
             dishabitedButtons = new List<Button>();
@@ -36,7 +40,6 @@ namespace GalacticEmpire
             bar = game.Content.Load<Texture2D>(GUIFolder + "Bar");
             buttonTexture = game.Content.Load<Texture2D>(GUIFolder + "InGameButton");
             closeTexture = game.Content.Load<Texture2D>(GUIFolder + "Close");
-            foodIcon = game.Content.Load<Texture2D>(GUIFolder + "FoodIcon");
 
             device = game.GraphicsDevice;
 
@@ -48,16 +51,22 @@ namespace GalacticEmpire
 
             rectangle.SetData(data);
             SetButtons();
+
+            Initialize();
+            //Carica le sottoschede del menu del pianeta
+            CommerceUIDesigner.Load(game);
         }
 
         static void SetButtons()
         {
             int Width = GraphicSettings.ScreenBounds.Width;
             int Height = GraphicSettings.ScreenBounds.Height;
-            closeButton = (new Button(new Rectangle(relativeScreen.Width, relativeScreen.Y, closeTexture.Width, closeTexture.Height), "CloseButton"));
+            closeButton = (new Button(new Rectangle(relativeScreen.Width + relativeScreen.X, relativeScreen.Y, closeTexture.Width, closeTexture.Height), "CloseButton"));
             closeButton.LoadTexture(closeTexture);
 
-            Vector2 buttonDimensions = new Vector2((Width - 200) / 3, (Height - 250) / 5);
+            Vector2 buttonDimensions = new Vector2((Width - 200) / 4, (Height - 200) / 5);
+            buttonDimensions.X -= 20;
+            buttonDimensions.Y -= 10;
 
             Color[] data = new Color[(int)(buttonDimensions.X * buttonDimensions.Y)];
             Texture2D txt = new Texture2D(device, (int)(buttonDimensions.X), (int)(buttonDimensions.Y));
@@ -66,9 +75,16 @@ namespace GalacticEmpire
                 data[i] = Color.Yellow;
             txt.SetData(data);
 
-            inhabitedButtons.Add(new Button(new Rectangle(relativeScreen.Width - (int)buttonDimensions.X - 10, relativeScreen.Y + 50, (int)buttonDimensions.X, (int)buttonDimensions.Y), "Commercia", "Commerce"));
-            inhabitedButtons.Add(new Button(new Rectangle(relativeScreen.Width - (int)buttonDimensions.X - 10, relativeScreen.Y + 60 + (int)buttonDimensions.Y, (int)buttonDimensions.X, (int)buttonDimensions.Y), "Ripara", "Repair"));
-            inhabitedButtons.Add(new Button(new Rectangle(relativeScreen.Width - (int)buttonDimensions.X - 10, relativeScreen.Y + 70 + 2 * (int)buttonDimensions.Y, (int)buttonDimensions.X, (int)buttonDimensions.Y), "Ricarica", "Recharge"));
+            string[] buttonsText = new string[] { "Commercia", "Rotta commerciale", "Regala", "Eventi", "Spia", "Attacca", "Ripara", "Ricarica" };
+            string[] buttonsType = new string[] { "Commerce", "CommercialRoute", "Gift", "Events", "Spy", "Attack", "Repair", "Recharge" };
+            for (int i = 0; i < 8; i++)
+            {
+                int x = relativeScreen.X + relativeScreen.Width / 2 + (i % 2) * relativeScreen.Width / 4 + 10;
+                int y = relativeScreen.Y + relativeScreen.Height / 5 + (i / 2) * relativeScreen.Height / 5 + 5;
+                Rectangle r = new Rectangle(x, y, txt.Width, txt.Height);
+                inhabitedButtons.Add(new Button(r, buttonsText[i], buttonsType[i]));
+
+            }
 
             dishabitedButtons.Add(new Button(new Rectangle(relativeScreen.Width - (int)buttonDimensions.X - 10, relativeScreen.Y + 50, (int)buttonDimensions.X, (int)buttonDimensions.Y), "Terraforma", "Terraform"));
             dishabitedButtons.Add(new Button(new Rectangle(relativeScreen.Width - (int)buttonDimensions.X - 10, relativeScreen.Y + 60 + (int)buttonDimensions.Y, (int)buttonDimensions.X, (int)buttonDimensions.Y), "Fonda colonia", "Found"));
@@ -86,28 +102,70 @@ namespace GalacticEmpire
                 b.SetTextColor(Color.Black);
             }
         }
+
+
+        static public void Initialize()
+        {
+            lastClickTime = 0;
+            state = PanelState.WAIT;
+        }
+
         static public string ButtonClicked()
         {
             string button = "NONE";
-            if (GameSystemDesigner.ActualPlanet.PlanetSettlement != null)
+            if (lastClickTime++ < 10)
+                return button;
+
+            switch(state)
             {
-                foreach (Button b in inhabitedButtons)
-                {
-                    if (b.WasPressed())
-                        button = b.Type;
-                }
+                case PanelState.WAIT:
+                    if (GameSystemDesigner.ActualPlanet.PlanetSettlement != null)
+                    {
+                        foreach (Button b in inhabitedButtons)
+                        {
+                            if (b.WasPressed())
+                            {
+                                button = b.Type;
+                                LoadNewWindow(button);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        foreach (Button b in dishabitedButtons)
+                        {
+                            if (b.WasPressed())
+                            {
+                                button = b.Type;
+                            }
+                        }
+                    }
+                    if (closeButton.WasPressed())
+                        button = closeButton.Type;
+                    break;
+                case PanelState.COMMERCE:
+                    if (CommerceUIDesigner.ButtonClicked() == "CloseButton")
+                        state = PanelState.WAIT;
+                    break;
             }
-            else
-            {
-                foreach (Button b in dishabitedButtons)
-                {
-                    if (b.WasPressed())
-                        button = b.Type;
-                }
-            }
-            if (closeButton.WasPressed())
-                button = closeButton.Type;
+
+            if (inhabitedButtons[0].WasPressed())
+                lastClickTime = 0;
             return button;
+        }
+
+        static void LoadNewWindow(string button)
+        {
+            switch (button)
+            {
+                case "Commerce":
+                    CommerceUIDesigner.LoadWindowComponents(GameSystemDesigner.ActualPlanet);
+                    state = PanelState.COMMERCE;
+                    break;
+                default:
+                    state = PanelState.WAIT;
+                    break;
+            }
         }
 
         static public void WriteInhabitedButtons()
@@ -140,21 +198,24 @@ namespace GalacticEmpire
         {
             spriteBatch.Begin();
 
-            Vector2 position = new Vector2(100, 100);
-            spriteBatch.Draw(rectangle, position, Color.White);
-
-            spriteBatch.DrawString(font, planet.Name, new Vector2(GraphicSettings.CenterScreen.X - font.MeasureString(planet.Name).X / 2, 110), Color.Red);
-            closeButton.DrawButton(spriteBatch);
-
-            if (GameWindow.ActualState == GameWindow.GameState.PLANET)
+            switch(state)
             {
-                if (planet.PlanetSettlement != null)
-                    DrawIfInhabited(planet);
-                else if (planet.IsHabitable)
-                    DrawIfHabitable(planet);
+                case PanelState.WAIT:
+                    spriteBatch.Draw(rectangle, relativeScreen, Color.White);
+
+                    spriteBatch.DrawString(font, planet.Name, new Vector2(GraphicSettings.CenterScreen.X - font.MeasureString(planet.Name).X / 2, 110), Color.Red);
+                    closeButton.DrawButton(spriteBatch);
+
+                    if (planet.PlanetSettlement != null)
+                        DrawIfInhabited(planet);
+                    else if (planet.IsHabitable)
+                        DrawIfHabitable(planet);
+                    break;
+                case PanelState.COMMERCE:
+                    GameSystemDesigner.Draw();
+                    CommerceUIDesigner.Draw();
+                    break;
             }
-            else if (GameWindow.ActualState == GameWindow.GameState.COMMERCE)
-                DrawCommerce(planet);
 
             spriteBatch.End();
         }
@@ -225,16 +286,9 @@ namespace GalacticEmpire
             }
             else
             {
-                string txt = "Questo pianeta non e' colonizzabile poiche'\nun altro impero e' il proprietario del sistema.";
+                string txt = "Questo pianeta non è colonizzabile poiché\nun altro impero è il proprietario del sistema.";
                 spriteBatch.DrawString(font, txt, new Vector2(GraphicSettings.CenterScreen.X - font.MeasureString(txt).X / 2, 180), Color.Black);
             }
-        }
-
-        static private void DrawCommerce(Planet planet)
-        {
-            int x = GraphicSettings.ScreenBounds.Width - 200;
-            x /= foodIcon.Width;
-
         }
     }
 }

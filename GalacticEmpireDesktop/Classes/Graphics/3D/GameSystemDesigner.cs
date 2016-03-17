@@ -2,12 +2,15 @@
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Microsoft.Xna.Framework.Input.Touch;
+using Microsoft.Xna.Framework.Audio;
 using System.Collections.Generic;
 
 namespace GalacticEmpire
 {
     static class GameSystemDesigner
     {
+        static SoundEffect shipStart;
         static Skybox skybox;
         static Camera galaxyCamera;
         static BasicEffect effect;
@@ -21,13 +24,11 @@ namespace GalacticEmpire
 
         static public void Load(Game game)
         {
+            shipStart = game.Content.Load<SoundEffect>(@"Sounds\Effects\ShipStart");
             Model skyboxModel = game.Content.Load<Model>(@"Skybox\Skybox");
             skybox = new Skybox(game.GraphicsDevice, skyboxModel);
             effect = new BasicEffect(game.GraphicsDevice);
             graphicsDevice = game.GraphicsDevice;
-
-            GamePlanetUIDesigner.Load(game);
-
 
             Vector3 cameraPosition = new Vector3(0, 200, 500);
             galaxyCamera = new Camera(cameraPosition, new Vector3(0, 0, 0), 500, MathHelper.PiOver2);
@@ -36,7 +37,10 @@ namespace GalacticEmpire
         static public void EnterSystem()
         {
             if (!GameManager.ActualSystem.IsDiscovered && GameManager.ActualSystemOwner != null)
+            {
                 GameManager.ActualSystemOwner.CreateNewRelation(GameManager.PlayerEmpire);
+                GameManager.PlayerEmpire.CreateNewRelation(GameManager.ActualSystemOwner);
+            }
             GameManager.ActualSystem.IsDiscovered = true;
             actualPlanet = null;
             foreach(Planet p in GameManager.ActualSystem.Planets)
@@ -54,22 +58,45 @@ namespace GalacticEmpire
             pointedPlanet = null;
             ///Se il giocatore ha cliccato con il mouse controlla se interseca un pianeta
 
-            Vector2 mouseLocation = Mouse.GetState().Position.ToVector2();
+            Vector2 clickPosition = new Vector2(0, 0);
+
+#if WINDOWS
+            clickPosition = Mouse.GetState().Position.ToVector2();
+#endif
+
+            if (TouchPanel.GetState().IsConnected)
+            {
+                TouchCollection touches = TouchPanel.GetState();
+                if (touches.Count > 0)
+                    foreach (var touch in touches)
+                        SetTarget(touch.Position, true);
+                else
+                    SetTarget(clickPosition, false);
+            }
+            else
+                SetTarget(clickPosition, false);
+
+        }
+
+        static void SetTarget(Vector2 startingPosition, bool FromTouch = false)
+        {
             Matrix view = galaxyCamera.CameraView;
             Matrix projection = galaxyCamera.CameraProjection;
             Viewport viewport = graphicsDevice.Viewport;
 
             foreach (Planet p in GameManager.ActualSystem.Planets)
             {
-                if (RayIntersectCalcolator.Intersects(mouseLocation, StaticStarModels.GetModel(p.PlanetType), p.GetWorld(), view, projection, viewport))
+                if (RayIntersectCalcolator.Intersects(startingPosition, StaticStarModels.GetModel(p.PlanetType), p.GetWorld(), view, projection, viewport))
                 {
                     pointedPlanet = p;
                 }
             }
-            if (Mouse.GetState().LeftButton == ButtonState.Pressed && pointedPlanet != null)
+            if ((Mouse.GetState().LeftButton == ButtonState.Pressed || FromTouch) && pointedPlanet != null)
             {
                 actualPlanet = pointedPlanet;
                 PlayerShip.SetDestination(pointedPlanet.PlanetPosition);
+                if (GameParams.soundEnabled)
+                    shipStart.Play();
             }
             else if (actualPlanet != null)
                 PlayerShip.SetPosition(actualPlanet.PlanetPosition);

@@ -51,6 +51,8 @@
     <Compile Include="Classes\Entities\Ship.cs" />
     <Compile Include="Classes\Entities\SolarSystem.cs" />
     <Compile Include="Classes\Entities\WarShip.cs" />
+    <Compile Include="Classes\File\LoadGameClass.cs" />
+    <Compile Include="Classes\File\SaveGameClass.cs" />
     <Compile Include="Classes\Graphics\3D\Camera.cs" />
     <Compile Include="Classes\Graphics\3D\GameGalaxyDesigner.cs" />
     <Compile Include="Classes\Graphics\3D\GameSystemDesigner.cs" />
@@ -59,8 +61,13 @@
     <Compile Include="Classes\Graphics\3D\StaticPlanetModels.cs" />
     <Compile Include="Classes\Graphics\3D\StaticStarModels.cs" />
     <Compile Include="Classes\Graphics\UI\Button.cs" />
+    <Compile Include="Classes\Graphics\UI\CommerceButton.cs" />
+    <Compile Include="Classes\Graphics\UI\CommerceUIDesigner.cs" />
     <Compile Include="Classes\Graphics\UI\GamePlanetUIDesigner.cs" />
     <Compile Include="Classes\Graphics\UI\GameUIDesigner.cs" />
+    <Compile Include="Classes\Graphics\UI\PauseDesigner.cs" />
+    <Compile Include="Classes\Graphics\UI\QuantitySelectionItem.cs" />
+    <Compile Include="Classes\Program\GameActionsManager.cs" />
     <Compile Include="Classes\Program\GameCommerceManager.cs" />
     <Compile Include="Classes\Program\GameManager.cs" />
     <Compile Include="Classes\Program\LevelManager.cs" />
@@ -68,10 +75,14 @@
     <Compile Include="Classes\Program\NameGenerator.cs" />
     <Compile Include="Classes\Settings\GameParams.cs" />
     <Compile Include="Classes\Settings\GraphicSettings.cs" />
+    <Compile Include="Classes\Windows\CreditsWindow.cs" />
     <Compile Include="Classes\Windows\GameWindow.cs" />
+    <Compile Include="Classes\Windows\LoadGameWindow.cs" />
     <Compile Include="Classes\Windows\LoadingWindow.cs" />
     <Compile Include="Classes\Windows\MainMenu.cs" />
     <Compile Include="Classes\Windows\NewGameWindow.cs" />
+    <Compile Include="Classes\Windows\SettingsWindow.cs" />
+    <Compile Include="Classes\Windows\SplashScreenWindow.cs" />
     <Compile Include="GameMainWindow.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

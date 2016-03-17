@@ -58,6 +58,31 @@ namespace GalacticEmpire
             angleOfRotation = 1 / (8 * radius);
         }
 
+        /// <summary>
+        /// Costruttore del pianeta a partire da attributi salvati nel file di salvataggio
+        /// </summary>
+        /// <param name="Name">Nome</param>
+        /// <param name="Position">Posizione</param>
+        /// <param name="StarPosition">Posizione della stella intorno alla quale orbita</param>
+        /// <param name="PlanetType">Tipo di pianeta</param>
+        /// <param name="Habitable">Abitabile</param>
+        /// <param name="Terrascore">Terrascore</param>
+        /// <param name="Resources">Risorse</param>
+        public Planet(string Name, Vector3 Position, Vector3 StarPosition, string PlanetType, bool Habitable, int Terrascore, uint Resources)
+        {
+            name = Name;
+            planetPosition = Position;
+            planetType = PlanetType;
+            isHabitable = Habitable;
+            terrascore = Terrascore;
+            resources = Resources;
+            starPosition = StarPosition;
+            float x = starPosition.X - planetPosition.X;
+            float z = starPosition.Z - planetPosition.Z;
+            radius = (float)Math.Sqrt(x * x + z * z);
+            angleOfRotation = 1 / (8 * radius);
+        }
+
         public void CreateSettlement(Settlement settlement)
         {
             planetSettlement = settlement;

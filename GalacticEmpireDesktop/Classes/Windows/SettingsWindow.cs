@@ -7,41 +7,37 @@ using System.Collections.Generic;
 
 namespace GalacticEmpire
 {
-    class NewGameWindow : Microsoft.Xna.Framework.DrawableGameComponent
+    class SettingsWindow : Microsoft.Xna.Framework.DrawableGameComponent
     {
         protected SpriteBatch spriteBatch;
         SpriteFont font;
         Texture2D buttonTexture;
         Texture2D background;
 
-        bool startLoading;
-        public bool StartLoading { get { return startLoading; } }
-
-        bool backToMenu;
-        public bool BackToMenu { get { return backToMenu; } }
+        bool finished;
+        public bool Finished { get { return finished; } }
 
         List<Button> buttons;
         List<Button> optionButtons;
 
-        enum Option { DIMENSION, EMPIRES, RELIGION, DIFFICULTY, NULL};
+        enum Option { MUSIC, SOUND, NULL };
         Option actualOption;
+
+        bool music, sounds;
+
 
         /// <summary>
         /// Costruttore
         /// </summary>
         /// <param name="game"></param>
-        public NewGameWindow(Game game) : base(game)
+        public SettingsWindow(Game game) : base(game)
         {
             spriteBatch = (SpriteBatch)Game.Services.GetService(typeof(SpriteBatch));
-            startLoading = false;
-            backToMenu = false;
+            finished = false;
+            music = GameParams.musicEnabled;
+            sounds = GameParams.soundEnabled;
 
             actualOption = Option.NULL;
-            GameParams.empireNumber = 150;
-            GameParams.starNumber = 1000;
-            GameParams.name = NameGenerator.GetName(4);
-            GameParams.religionType = Religion.GetRandomReligion();
-            GameParams.gameDifficulty = GameParams.Difficulty.EASY;
         }
 
         /// <summary>
@@ -53,7 +49,7 @@ namespace GalacticEmpire
             string GUIFolder = GraphicSettings.GetGUIFolder();
             font = content.Load<SpriteFont>(GUIFolder + "Consolas");
             buttonTexture = content.Load<Texture2D>(GUIFolder + "InGameButton");
-            background = content.Load<Texture2D>(@"Skybox/BackgroundNG");
+            background = content.Load<Texture2D>(@"Skybox/BackgroundSettings");
 
             SetPositions();
         }
@@ -69,18 +65,18 @@ namespace GalacticEmpire
             int w = (int)GraphicSettings.CenterScreen.X;
             int h = 10;
 
-            Vector2 v = font.MeasureString("Nuovo gioco");
+            Vector2 v = font.MeasureString("Impostazioni");
             Vector2 newBtTxt = new Vector2(v.X + 25, v.Y + 25);
             Rectangle r = new Rectangle(w - (int)newBtTxt.X / 2, h, (int)newBtTxt.X, (int)newBtTxt.Y);
-            buttons.Add(new Button(r, "Nuovo Gioco", "Title"));
+            buttons.Add(new Button(r, "Impostazioni", "Title"));
             buttons[0].LoadTextureAndFont(buttonTexture, font);
 
             w = GraphicSettings.ScreenBounds.Width;
             h = GraphicSettings.ScreenBounds.Height;
-            v = font.MeasureString("Inizia gioco");
+            v = font.MeasureString("Accetta modifiche");
             newBtTxt = new Vector2(v.X + 25, v.Y + 25);
             r = new Rectangle(w - (int)newBtTxt.X - 10, h - (int)newBtTxt.Y - 10, (int)newBtTxt.X, (int)newBtTxt.Y);
-            buttons.Add(new Button(r, "Inizia Gioco", "StartGame"));
+            buttons.Add(new Button(r, "Accetta modifiche", "AcceptButton"));
             buttons[1].LoadTextureAndFont(buttonTexture, font);
 
             v = font.MeasureString("Torna al menu");
@@ -98,20 +94,22 @@ namespace GalacticEmpire
                 w = 350;
             ///PULSANTI DEL TIPO DI OPZIONE
             r = new Rectangle(10, hs, w, h);
-            buttons.Add(new Button(r, "Dimensioni galassia\nGrande", "Dimensions"));
+            string s = "Musica\n";
+            if (music)
+                s += "SI";
+            else
+                s += "NO";
+            buttons.Add(new Button(r, s, "Music"));
             buttons[3].LoadTextureAndFont(buttonTexture, font);
 
-            r = new Rectangle(10, (int)(hs + (float)5 /4 * h), w, h);
-            buttons.Add(new Button(r, "Numero di imperi\nTanti", "Empires"));
+            r = new Rectangle(10, (int)(hs + (float)5 / 4 * h), w, h);
+            s = "Suoni\n";
+            if (sounds)
+                s += "SI";
+            else
+                s += "NO";
+            buttons.Add(new Button(r, s, "Sounds"));
             buttons[4].LoadTextureAndFont(buttonTexture, font);
-
-            r = new Rectangle(10, (int)(hs + (float)10 /4 * h), w, h);
-            buttons.Add(new Button(r, "Religione\nCasuale", "Religion"));
-            buttons[5].LoadTextureAndFont(buttonTexture, font);
-
-            r = new Rectangle(10, (int)(hs + (float)15/4 * h), w, h);
-            buttons.Add(new Button(r, "Difficoltà\nFacile", "Difficulty"));
-            buttons[6].LoadTextureAndFont(buttonTexture, font);
 
             ///PULSANTI PER LA SCELTA
             int ws = w + 20;
@@ -167,61 +165,35 @@ namespace GalacticEmpire
                 {
                     switch (b.Type)
                     {
-                        case "Dimensions":
-                            optionButtons[0].Text = "Piccola";
-                            optionButtons[1].Text = "Media";
-                            optionButtons[2].Text = "Grande";
+                        case "Music":
+                            optionButtons[0].Text = "SI";
+                            optionButtons[1].Text = "NO";
 
                             optionButtons[0].IsVisible = true;
                             optionButtons[1].IsVisible = true;
-                            optionButtons[2].IsVisible = true;
+                            optionButtons[2].IsVisible = false;
                             optionButtons[3].IsVisible = false;
                             optionButtons[4].IsVisible = false;
-                            actualOption = Option.DIMENSION;
+                            actualOption = Option.MUSIC;
                             break;
-                        case "Empires":
-                            optionButtons[0].Text = "Pochi";
-                            optionButtons[1].Text = "Nella norma";
-                            optionButtons[2].Text = "Tanti";
+                        case "Sounds":
+                            optionButtons[0].Text = "SI";
+                            optionButtons[1].Text = "NO";
 
                             optionButtons[0].IsVisible = true;
                             optionButtons[1].IsVisible = true;
-                            optionButtons[2].IsVisible = true;
+                            optionButtons[2].IsVisible = false;
                             optionButtons[3].IsVisible = false;
                             optionButtons[4].IsVisible = false;
-                            actualOption = Option.EMPIRES;
+                            actualOption = Option.SOUND;
                             break;
-                        case "Religion":
-                            optionButtons[0].Text = "Casuale";
-                            optionButtons[1].Text = "Ateo";
-                            optionButtons[2].Text = "Atom";
-                            optionButtons[3].Text = "Bless";
-                            optionButtons[4].Text = "Curser";
-
-                            optionButtons[0].IsVisible = true;
-                            optionButtons[1].IsVisible = true;
-                            optionButtons[2].IsVisible = true;
-                            optionButtons[3].IsVisible = true;
-                            optionButtons[4].IsVisible = true;
-                            actualOption = Option.RELIGION;
-                            break;
-                        case "Difficulty":
-                            optionButtons[0].Text = "Facile";
-                            optionButtons[1].Text = "Normale";
-                            optionButtons[2].Text = "Difficile";
-
-                            optionButtons[0].IsVisible = true;
-                            optionButtons[1].IsVisible = true;
-                            optionButtons[2].IsVisible = true;
-                            optionButtons[3].IsVisible = false;
-                            optionButtons[4].IsVisible = false;
-                            actualOption = Option.DIFFICULTY;
-                            break;
-                        case "StartGame":
-                            startLoading = true;
+                        case "AcceptButton":
+                            GameParams.musicEnabled = music;
+                            GameParams.soundEnabled = sounds;
+                            finished = true;
                             break;
                         case "BackToMenu":
-                            backToMenu = true;
+                            finished = true;
                             break;
                     }
 
@@ -239,51 +211,23 @@ namespace GalacticEmpire
             int? opt = GetOptionClicked();
             if (opt == null)
                 return;
-            switch(actualOption)
+            switch (actualOption)
             {
-                case Option.DIFFICULTY:
+                case Option.MUSIC:
                     if (opt == 0)
-                        GameParams.gameDifficulty = GameParams.Difficulty.EASY;
+                        music = true;
                     else if (opt == 1)
-                        GameParams.gameDifficulty = GameParams.Difficulty.NORMAL;
-                    else if (opt == 2)
-                        GameParams.gameDifficulty = GameParams.Difficulty.HARD;
-                    buttons[6].Text = "Difficoltà\n" + optionButtons[(int)opt].Text;
-                    buttons[6].SetTextPosition();
-                    break;
-                case Option.DIMENSION:
-                    if (opt == 0)
-                        GameParams.starNumber = 15;
-                    else if (opt == 1)
-                        GameParams.starNumber = 750;
-                    else if (opt == 2)
-                        GameParams.starNumber = 1000;
-                    buttons[3].Text = "Dimensioni galassia\n" + optionButtons[(int)opt].Text;
+                        music = false;
+                    buttons[3].Text = "Musica\n" + optionButtons[(int)opt].Text;
                     buttons[3].SetTextPosition();
                     break;
-                case Option.EMPIRES:
+                case Option.SOUND:
                     if (opt == 0)
-                        GameParams.empireNumber = 75;
+                        sounds = true;
                     else if (opt == 1)
-                        GameParams.empireNumber = 125;
-                    else if (opt == 2)
-                        GameParams.empireNumber = 150;
-                    buttons[4].Text = "Numero di Imperi\n" + optionButtons[(int)opt].Text;
+                        sounds = false;
+                    buttons[4].Text = "Suoni\n" + optionButtons[(int)opt].Text;
                     buttons[4].SetTextPosition();
-                    break;
-                case Option.RELIGION:
-                    if (opt == 0)
-                        GameParams.religionType = Religion.GetRandomReligion();
-                    else if (opt == 1)
-                        GameParams.religionType = Religion.ReligionType.ATEO;
-                    else if (opt == 2)
-                        GameParams.religionType = Religion.ReligionType.ATOM;
-                    else if (opt == 3)
-                        GameParams.religionType = Religion.ReligionType.BLESS;
-                    else if (opt == 4)
-                        GameParams.religionType = Religion.ReligionType.CURSER;
-                    buttons[5].Text = "Religione\n" + optionButtons[(int)opt].Text;
-                    buttons[5].SetTextPosition();
                     break;
             }
             foreach (Button b in optionButtons)
@@ -297,7 +241,7 @@ namespace GalacticEmpire
         int? GetOptionClicked()
         {
             int? option = null;
-            for(int i = 0; i < optionButtons.Count; i++)
+            for (int i = 0; i < optionButtons.Count; i++)
             {
                 if (optionButtons[i].WasPressed())
                 {

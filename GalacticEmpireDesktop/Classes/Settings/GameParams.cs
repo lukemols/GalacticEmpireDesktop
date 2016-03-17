@@ -13,5 +13,9 @@ namespace GalacticEmpire
         public static Religion.ReligionType religionType;
         public static string name;
         public static Difficulty gameDifficulty;
+        public static int autosaveNumber = 3;
+        public static int autosaveMinutes = 1;
+        public static bool musicEnabled = true;
+        public static bool soundEnabled = true;
     }
 }

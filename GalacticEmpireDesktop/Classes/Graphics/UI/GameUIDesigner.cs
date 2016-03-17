@@ -167,14 +167,7 @@ namespace GalacticEmpire
                     pointedButton.DrawButton(spriteBatch);
                 }
             }
-
-            foo();
             spriteBatch.End();
-        }
-
-        static void foo()
-        {
-            spriteBatch.DrawString(font, "Imperi: " + GameManager.Empires.Count.ToString(), new Vector2(15,15), Color.White);
         }
     }
 }

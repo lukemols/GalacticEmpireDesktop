@@ -18,7 +18,7 @@ namespace GalacticEmpire
         public List<SolarSystem> KnownSystems { get { return knownSystems; } }
 
         List<Relation> empireRelations;
-        List<Relation> EmpireRelations { get { return empireRelations; } }
+        public List<Relation> EmpireRelations { get { return empireRelations; } }
 
         Religion.ReligionType empireReligion;
         public Religion.ReligionType EmpireReligion { get { return empireReligion; } }
@@ -36,9 +36,6 @@ namespace GalacticEmpire
             knownSystems = new List<SolarSystem>();
             ownedSystems = new List<SolarSystem>();
             ownedSystems.Add(startingSystem);
-            foreach (Planet p in startingSystem.Planets)
-                if (p.PlanetSettlement != null && p.PlanetSettlement.Type == Settlement.SettlementType.CAPITAL)
-                    capitalPlanet = p;
             fleet = new List<Ship>();
             empireRelations = new List<Relation>();
             empireReligion = Religion.GetRandomReligion();
@@ -53,9 +50,6 @@ namespace GalacticEmpire
             knownSystems = new List<SolarSystem>();
             ownedSystems = new List<SolarSystem>();
             ownedSystems.Add(startingSystem);
-            foreach (Planet p in startingSystem.Planets)
-                if (p.PlanetSettlement != null && p.PlanetSettlement.Type == Settlement.SettlementType.CAPITAL)
-                    capitalPlanet = p;
             fleet = new List<Ship>();
             empireRelations = new List<Relation>();
             empireReligion = religion;
@@ -63,6 +57,27 @@ namespace GalacticEmpire
             if(rnd == null)
                rnd = new Random();
             missingSecondsToUpdate = rnd.Next(1, 60);
+        }
+
+        public Empire(string name, Religion.ReligionType religion, List<SolarSystem> knownSys, List<SolarSystem> ownedSys, List<Ship> fleet,
+            List<Relation> relations, Planet capital)
+        {
+            empireName = name;
+            empireReligion = religion;
+            knownSystems = knownSys;
+            ownedSystems = ownedSys;
+            this.fleet = fleet;
+            empireRelations = relations;
+            capitalPlanet = capital;
+            if (rnd == null)
+                rnd = new Random();
+            missingSecondsToUpdate = rnd.Next(1, 60);
+        }
+
+        public void SetEmpireCapital(Planet p)
+        {
+            if (p.PlanetSettlement.Type == Settlement.SettlementType.CAPITAL)
+                capitalPlanet = p;
         }
 
         public void CreateNewRelation(Empire otherEmpire)
@@ -102,11 +117,15 @@ namespace GalacticEmpire
             //Se non è ancora tempo di aggiornare ritorna indietro
             if (missingSecondsToUpdate-- > 0)
                 return;
+            else
+                missingSecondsToUpdate = rnd.Next(1, 60);
 
-            if(fleet.Count == 0)
+            if (fleet.Count == 0)
             {
-                
+                CreateShip();
             }
+            else
+                ExploreNewSystem();
             if(empireRelations.Count == 0)
             {
 
@@ -164,13 +183,13 @@ namespace GalacticEmpire
             //Se i è minore di c crea la nave commerciale
             if (i < c)
             {
-                CommercialShip cs = new CommercialShip(ownedSystems[0].SystemPosition, life, speed, cargo);
+                CommercialShip cs = new CommercialShip(ownedSystems[0].SystemPosition, life, speed, cargo, life);
                 fleet.Add(cs);
                 capitalPlanet.PlanetSettlement.Money -= cost;
             }
             else
             {
-                WarShip ws = new WarShip(ownedSystems[0].SystemPosition, life, speed, offensive);
+                WarShip ws = new WarShip(ownedSystems[0].SystemPosition, life, speed, offensive, life);
                 fleet.Add(ws);
                 capitalPlanet.PlanetSettlement.Money -= cost;
             }
@@ -239,17 +258,12 @@ namespace GalacticEmpire
                             if(pmax.IsHabitable)
                             {
                                 int money = capitalPlanet.PlanetSettlement.Money;
-                                //Prendiamo il livello di scienza e troviamo il costo per alzare lo score come 512 / log del livello(+1 x evitare problemi)
                                 int lvl = LevelManager.ActualLevel(pmax.PlanetSettlement.ScienceLevel);
-                                double lg = Math.Log(lvl + 1);
-                                int costPerUnit = (int)(512 / lg);
-                                int units = money / costPerUnit; //trova di quanto si può alzare il terrascore al max a seconda dei soldi disponibili
-                                int ts = 32 - pmax.Terrascore; //punteggio terrascore mancante al massimo
-                                if (units > ts) //Se è possibile superare il max x la disponibilità economica, allora raggiungi il max
-                                    units = ts;
-                                pmax.Terrascore += units; //Aggiungi le unità di terrascore
-                                capitalPlanet.PlanetSettlement.Money -= units * costPerUnit; //sottrai i soldi dalla capitale
-                                if (units > 0)
+
+                                int prize = GameActionsManager.TerraformPlanet(pmax, money, lvl);
+
+                                capitalPlanet.PlanetSettlement.Money -= prize; //sottrai i soldi dalla capitale
+                                if (prize > 0)
                                     return true;
                             }
                         }

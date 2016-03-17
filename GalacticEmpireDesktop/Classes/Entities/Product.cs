@@ -24,6 +24,5 @@ namespace GalacticEmpire
             this.quantity = quantity;
             this.level = level;
         }
-
     }
 }

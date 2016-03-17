@@ -90,6 +90,22 @@ namespace GalacticEmpire
             buttons.Add(new Button(new Rectangle(w - wb - buttonTexture.Width, h + hb, buttonTexture.Width, buttonTexture.Height), "Impostazioni", "Settings"));
             buttons[4].LoadTextureAndFont(buttonTexture, font);
 
+            string s = "Esci dal gioco";
+            GraphicsDevice device = Game.GraphicsDevice;
+            Vector2 buttonDimensions = font.MeasureString(s) + new Vector2(20, 10);
+            Vector2 buttonPosition = new Vector2(GraphicSettings.ScreenBounds.Width, GraphicSettings.ScreenBounds.Height) -
+                (buttonDimensions + new Vector2(20, 20));
+
+            Color[] data = new Color[(int)(buttonDimensions.X * buttonDimensions.Y)];
+            Texture2D txt = new Texture2D(device, (int)(buttonDimensions.X), (int)(buttonDimensions.Y));
+
+            for (int i = 0; i < data.Length; ++i)
+                data[i] = new Color(64, 64, 64, 128);
+            txt.SetData(data);
+            buttons.Add(new Button(new Rectangle((int)buttonPosition.X, (int)buttonPosition.Y,
+                (int)buttonDimensions.X, (int)buttonDimensions.Y), s, "ExitButton"));
+            buttons[5].LoadTextureAndFont(txt, font);
+
             foreach (Button b in buttons)
                 b.SetTextPosition();
         }
@@ -124,7 +140,6 @@ namespace GalacticEmpire
 
             //spriteBatch.DrawString(font, "Premi invio per nuovo gioco", new Vector2(100, 100), Color.Yellow);
             spriteBatch.Draw(title, titlePosition, null, Color.White, 0f, new Vector2(), titleZoom, SpriteEffects.None, 0f);
-            spriteBatch.DrawString(font, GraphicSettings.GetGUIFolder(), new Vector2(0, 0), Color.White);
 
             if (titleZoom >= 1)
                 foreach (Button b in buttons)

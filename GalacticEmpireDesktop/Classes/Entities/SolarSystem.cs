@@ -67,6 +67,24 @@ namespace GalacticEmpire
                 starType = "Blue";
         }
 
+        /// <summary>
+        /// Costruttore che crea un sistema solare a partire dai parametri indicati. Usare nel caricamento del gioco
+        /// </summary>
+        /// <param name="Name">Nome del sistema</param>
+        /// <param name="Position">Posizione</param>
+        /// <param name="StarType">Tipo di stella</param>
+        /// <param name="Discoved">Visitato dal giocatore</param>
+        /// <param name="Inhabited">Abitato</param>
+        public SolarSystem(string Name, Vector3 Position, string StarType, bool Discoved, bool Inhabited, List<Planet> Planets)
+        {
+            isDiscovered = Discoved;
+            isInhabited = Inhabited;
+            systemPosition = Position;
+            name = Name;
+            starType = StarType;
+            planets = Planets;
+        }
+
         public void CreatePlanets(bool playerStartingSystem = false)
         {
             planets = new List<Planet>();

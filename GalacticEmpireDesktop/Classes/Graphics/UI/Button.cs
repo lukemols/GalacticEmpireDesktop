@@ -95,6 +95,7 @@ namespace GalacticEmpire
         /// <param name="spriteFont">Font da dare al testo del pulsante</param>
         public void LoadTextureAndFont(Texture2D txt, SpriteFont spriteFont)
         {
+            withText = true;
             buttonTexture = txt;
             font = spriteFont;
         }

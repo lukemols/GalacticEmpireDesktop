@@ -54,17 +54,14 @@ namespace GalacticEmpire
             this.type = type;
             money = 20000;
             inhabitants = 50000;
-            inhabitants = 100000000;//
-            scienceLevel = 1;
-            tecnoLevel = 1;
-            commerceLevel = 1;
+            //inhabitants = 100000000;//
             defensiveArmy = 3000;
             offensiveArmy = 20;
             SetInitialRates(religion);
-            scienceGrowthRate = 100f;//
-            commerceGrowthRate = 100f;//
-            tecnoGrowthRate = 100f;//
-            inhaGrowthRate = 1.5f;//
+            //scienceGrowthRate = 100f;//
+            //commerceGrowthRate = 100f;//
+            //tecnoGrowthRate = 100f;//
+            //inhaGrowthRate = 1.5f;//
         }
 
         public Settlement(SettlementType type, int money, int inhabitants, int defense, int offense, Religion.ReligionType religion)
@@ -73,17 +70,41 @@ namespace GalacticEmpire
             this.type = type;
             this.money = money;
             this.inhabitants = inhabitants;
-            scienceLevel = 1;
-            tecnoLevel = 1;
-            commerceLevel = 1;
             defensiveArmy = defense;
             offensiveArmy = offense;
             SetInitialRates(religion);
         }
 
+        public Settlement(SettlementType type, int money, int inhabitants, int defense, int offense, float inhaRate,
+            float science, float scienceRate, float commerce, float commerceRate, float tecno, float tecnoRate)
+        {
+            this.type = type;
+            this.money = money;
+            this.inhabitants = inhabitants;
+            defensiveArmy = defense;
+            offensiveArmy = offense;
+            inhaGrowthRate = inhaRate;
+            scienceLevel = science;
+            scienceGrowthRate = scienceRate;
+            commerceLevel = commerce;
+            commerceGrowthRate = commerceRate;
+            tecnoLevel = tecno;
+            tecnoGrowthRate = tecnoRate;
+        }
+
         private void SetInitialRates(Religion.ReligionType religion)
         {
             Random rnd = new Random(this.GetHashCode());
+            int max = 5;
+            if (GameParams.gameDifficulty == GameParams.Difficulty.NORMAL)
+                max = 15;
+            else if (GameParams.gameDifficulty == GameParams.Difficulty.HARD)
+                max = 30;
+
+            scienceLevel = (float)(rnd.NextDouble() * max);
+            commerceLevel = (float)(rnd.NextDouble() * max);
+            tecnoLevel = (float)(rnd.NextDouble() * max);
+
             inhaGrowthRate = rnd.Next(1, 10) / 10000f + 1f;
             scienceGrowthRate = rnd.Next(1, 4) / 10f;
             commerceGrowthRate = rnd.Next(1, 4) / 10f;
@@ -104,6 +125,18 @@ namespace GalacticEmpire
                     defensiveArmy *= 2;
                     break;
             }
+        }
+
+        /// <summary>
+        /// Metodo che aggiunge i prodotti selezionati alla lista dei prodotti
+        /// </summary>
+        /// <param name="prod">Lista dei prodotti</param>
+        public void SetProducts(List<Product> prod)
+        {
+            if (products == null)
+                products = new List<Product>();
+            foreach (Product p in prod)
+                products.Add(p);
         }
 
         public void Update()

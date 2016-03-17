@@ -1,13 +1,13 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
+using System;
 using System.Collections.Generic;
-
+using System.IO;
 
 namespace GalacticEmpire
 {
-    class NewGameWindow : Microsoft.Xna.Framework.DrawableGameComponent
+    class LoadGameWindow : Microsoft.Xna.Framework.DrawableGameComponent
     {
         protected SpriteBatch spriteBatch;
         SpriteFont font;
@@ -23,25 +23,32 @@ namespace GalacticEmpire
         List<Button> buttons;
         List<Button> optionButtons;
 
-        enum Option { DIMENSION, EMPIRES, RELIGION, DIFFICULTY, NULL};
+        List<string> fileInfo;
+
+        int? actualOptionChoiceNumber;
+        string fileFolder;
+        string actualChoice;
+        string actualChoiceFolder;
+        string[] empireNames;
+        string[] actualChoiceFiles;
+
+        public string FilePath { get { return actualChoice; } }
+
+        enum Option { SAVE1, SAVE2, SAVE3, SAVE4, SAVE5, NULL };
         Option actualOption;
 
         /// <summary>
         /// Costruttore
         /// </summary>
         /// <param name="game"></param>
-        public NewGameWindow(Game game) : base(game)
+        public LoadGameWindow(Game game) : base(game)
         {
             spriteBatch = (SpriteBatch)Game.Services.GetService(typeof(SpriteBatch));
             startLoading = false;
             backToMenu = false;
-
             actualOption = Option.NULL;
-            GameParams.empireNumber = 150;
-            GameParams.starNumber = 1000;
-            GameParams.name = NameGenerator.GetName(4);
-            GameParams.religionType = Religion.GetRandomReligion();
-            GameParams.gameDifficulty = GameParams.Difficulty.EASY;
+            actualChoice = "";
+            ObtainSavedFiles();
         }
 
         /// <summary>
@@ -53,9 +60,31 @@ namespace GalacticEmpire
             string GUIFolder = GraphicSettings.GetGUIFolder();
             font = content.Load<SpriteFont>(GUIFolder + "Consolas");
             buttonTexture = content.Load<Texture2D>(GUIFolder + "InGameButton");
-            background = content.Load<Texture2D>(@"Skybox/BackgroundNG");
+            background = content.Load<Texture2D>(@"Skybox/BackgroundLoad");
 
             SetPositions();
+        }
+
+        void ObtainSavedFiles()
+        {
+            //Ottieni la cartella Documenti
+            var pathWithEnv = @"%USERPROFILE%\Documents";
+            var filePath = Environment.ExpandEnvironmentVariables(pathWithEnv);
+            //Crea la cartella Galactic Empire e all'interno quella specifica del gioco
+            filePath += @"\Galactic Empire\";
+            fileFolder = filePath;
+            empireNames = Directory.GetDirectories(filePath);
+            for (int i = 0; i < empireNames.Length; i++)
+                empireNames[i] = Path.GetFileNameWithoutExtension(empireNames[i]);
+        }
+
+        void ObtainActualChoiceFile(int gameIndex)
+        {
+            string folder = fileFolder + empireNames[gameIndex];
+            actualChoiceFiles = Directory.GetFiles(folder);
+            actualChoiceFolder = folder;
+            for (int i = 0; i < actualChoiceFiles.Length; i++)
+                actualChoiceFiles[i] = Path.GetFileNameWithoutExtension(actualChoiceFiles[i]);
         }
 
         /// <summary>
@@ -69,10 +98,10 @@ namespace GalacticEmpire
             int w = (int)GraphicSettings.CenterScreen.X;
             int h = 10;
 
-            Vector2 v = font.MeasureString("Nuovo gioco");
+            Vector2 v = font.MeasureString("Scegli gioco salvato");
             Vector2 newBtTxt = new Vector2(v.X + 25, v.Y + 25);
             Rectangle r = new Rectangle(w - (int)newBtTxt.X / 2, h, (int)newBtTxt.X, (int)newBtTxt.Y);
-            buttons.Add(new Button(r, "Nuovo Gioco", "Title"));
+            buttons.Add(new Button(r, "Scegli gioco salvato", "Title"));
             buttons[0].LoadTextureAndFont(buttonTexture, font);
 
             w = GraphicSettings.ScreenBounds.Width;
@@ -98,20 +127,24 @@ namespace GalacticEmpire
                 w = 350;
             ///PULSANTI DEL TIPO DI OPZIONE
             r = new Rectangle(10, hs, w, h);
-            buttons.Add(new Button(r, "Dimensioni galassia\nGrande", "Dimensions"));
+            buttons.Add(new Button(r, "Save1", "Save1"));
             buttons[3].LoadTextureAndFont(buttonTexture, font);
 
-            r = new Rectangle(10, (int)(hs + (float)5 /4 * h), w, h);
-            buttons.Add(new Button(r, "Numero di imperi\nTanti", "Empires"));
+            r = new Rectangle(10, (int)(hs + (float)5 / 4 * h), w, h);
+            buttons.Add(new Button(r, "Save2", "Save2"));
             buttons[4].LoadTextureAndFont(buttonTexture, font);
 
-            r = new Rectangle(10, (int)(hs + (float)10 /4 * h), w, h);
-            buttons.Add(new Button(r, "Religione\nCasuale", "Religion"));
+            r = new Rectangle(10, (int)(hs + (float)10 / 4 * h), w, h);
+            buttons.Add(new Button(r, "Save3", "Save3"));
             buttons[5].LoadTextureAndFont(buttonTexture, font);
 
-            r = new Rectangle(10, (int)(hs + (float)15/4 * h), w, h);
-            buttons.Add(new Button(r, "Difficoltà\nFacile", "Difficulty"));
+            r = new Rectangle(10, (int)(hs + (float)15 / 4 * h), w, h);
+            buttons.Add(new Button(r, "Save4", "Save4"));
             buttons[6].LoadTextureAndFont(buttonTexture, font);
+
+            r = new Rectangle(10, (int)(hs + (float)20 / 4 * h), w, h);
+            buttons.Add(new Button(r, "Save5", "Save5"));
+            buttons[7].LoadTextureAndFont(buttonTexture, font);
 
             ///PULSANTI PER LA SCELTA
             int ws = w + 20;
@@ -135,7 +168,7 @@ namespace GalacticEmpire
             optionButtons.Add(new Button(r, "OPT4", "Option4"));
             optionButtons[4].LoadTextureAndFont(buttonTexture, font);
 
-
+            SetFileToButtons();
             foreach (Button b in buttons)
                 b.SetTextPosition();
             foreach (Button b in optionButtons)
@@ -143,6 +176,20 @@ namespace GalacticEmpire
                 b.SetTextPosition();
                 b.IsVisible = false;
             }
+        }
+
+        void SetFileToButtons()
+        {
+            int l = empireNames.Length;
+            if (l >= 5)
+                l = 5;
+            int i = 3, j;
+            for(j = 0; j < l; j++)
+            {
+                buttons[i + j].Text = empireNames[j];
+            }
+            for (; j < 5; j++)
+                buttons[i + j].IsVisible = false;
         }
 
         /// <summary>
@@ -167,68 +214,56 @@ namespace GalacticEmpire
                 {
                     switch (b.Type)
                     {
-                        case "Dimensions":
-                            optionButtons[0].Text = "Piccola";
-                            optionButtons[1].Text = "Media";
-                            optionButtons[2].Text = "Grande";
-
-                            optionButtons[0].IsVisible = true;
-                            optionButtons[1].IsVisible = true;
-                            optionButtons[2].IsVisible = true;
-                            optionButtons[3].IsVisible = false;
-                            optionButtons[4].IsVisible = false;
-                            actualOption = Option.DIMENSION;
+                        case "Save1":
+                            ObtainActualChoiceFile(0);
+                            actualOption = Option.SAVE1;
                             break;
-                        case "Empires":
-                            optionButtons[0].Text = "Pochi";
-                            optionButtons[1].Text = "Nella norma";
-                            optionButtons[2].Text = "Tanti";
-
-                            optionButtons[0].IsVisible = true;
-                            optionButtons[1].IsVisible = true;
-                            optionButtons[2].IsVisible = true;
-                            optionButtons[3].IsVisible = false;
-                            optionButtons[4].IsVisible = false;
-                            actualOption = Option.EMPIRES;
+                        case "Save2":
+                            ObtainActualChoiceFile(1);
+                            actualOption = Option.SAVE2;
                             break;
-                        case "Religion":
-                            optionButtons[0].Text = "Casuale";
-                            optionButtons[1].Text = "Ateo";
-                            optionButtons[2].Text = "Atom";
-                            optionButtons[3].Text = "Bless";
-                            optionButtons[4].Text = "Curser";
-
-                            optionButtons[0].IsVisible = true;
-                            optionButtons[1].IsVisible = true;
-                            optionButtons[2].IsVisible = true;
-                            optionButtons[3].IsVisible = true;
-                            optionButtons[4].IsVisible = true;
-                            actualOption = Option.RELIGION;
+                        case "Save3":
+                            ObtainActualChoiceFile(2);
+                            actualOption = Option.SAVE3;
                             break;
-                        case "Difficulty":
-                            optionButtons[0].Text = "Facile";
-                            optionButtons[1].Text = "Normale";
-                            optionButtons[2].Text = "Difficile";
-
-                            optionButtons[0].IsVisible = true;
-                            optionButtons[1].IsVisible = true;
-                            optionButtons[2].IsVisible = true;
-                            optionButtons[3].IsVisible = false;
-                            optionButtons[4].IsVisible = false;
-                            actualOption = Option.DIFFICULTY;
+                        case "Save4":
+                            ObtainActualChoiceFile(3);
+                            actualOption = Option.SAVE4;
+                            break;
+                        case "Save5":
+                            ObtainActualChoiceFile(4);
+                            actualOption = Option.SAVE5;
                             break;
                         case "StartGame":
                             startLoading = true;
+                            actualOption = Option.NULL;
                             break;
                         case "BackToMenu":
                             backToMenu = true;
                             break;
                     }
-
+                    if (actualOption != Option.NULL)
+                    {
+                        actualChoice = "";
+                        SetOptionButtonsText();
+                    }
                     foreach (Button bt in optionButtons)
                         bt.SetTextPosition();
                 }
             }
+        }
+
+        void SetOptionButtonsText()
+        {
+            int i;
+            for(i = 0; i < actualChoiceFiles.Length; i++)
+            {
+                string date = File.GetLastAccessTime(actualChoiceFolder + @"\" + actualChoiceFiles[i] + ".ges").ToString();
+                optionButtons[i].Text = actualChoiceFiles[i] + "\n" + date;
+                optionButtons[i].IsVisible = true;
+            }
+            for (; i < optionButtons.Count; i++)
+                optionButtons[i].IsVisible = false;
         }
 
         /// <summary>
@@ -237,57 +272,21 @@ namespace GalacticEmpire
         void ControlOptionClicked()
         {
             int? opt = GetOptionClicked();
+            actualOptionChoiceNumber = opt;
             if (opt == null)
                 return;
-            switch(actualOption)
-            {
-                case Option.DIFFICULTY:
-                    if (opt == 0)
-                        GameParams.gameDifficulty = GameParams.Difficulty.EASY;
-                    else if (opt == 1)
-                        GameParams.gameDifficulty = GameParams.Difficulty.NORMAL;
-                    else if (opt == 2)
-                        GameParams.gameDifficulty = GameParams.Difficulty.HARD;
-                    buttons[6].Text = "Difficoltà\n" + optionButtons[(int)opt].Text;
-                    buttons[6].SetTextPosition();
-                    break;
-                case Option.DIMENSION:
-                    if (opt == 0)
-                        GameParams.starNumber = 15;
-                    else if (opt == 1)
-                        GameParams.starNumber = 750;
-                    else if (opt == 2)
-                        GameParams.starNumber = 1000;
-                    buttons[3].Text = "Dimensioni galassia\n" + optionButtons[(int)opt].Text;
-                    buttons[3].SetTextPosition();
-                    break;
-                case Option.EMPIRES:
-                    if (opt == 0)
-                        GameParams.empireNumber = 75;
-                    else if (opt == 1)
-                        GameParams.empireNumber = 125;
-                    else if (opt == 2)
-                        GameParams.empireNumber = 150;
-                    buttons[4].Text = "Numero di Imperi\n" + optionButtons[(int)opt].Text;
-                    buttons[4].SetTextPosition();
-                    break;
-                case Option.RELIGION:
-                    if (opt == 0)
-                        GameParams.religionType = Religion.GetRandomReligion();
-                    else if (opt == 1)
-                        GameParams.religionType = Religion.ReligionType.ATEO;
-                    else if (opt == 2)
-                        GameParams.religionType = Religion.ReligionType.ATOM;
-                    else if (opt == 3)
-                        GameParams.religionType = Religion.ReligionType.BLESS;
-                    else if (opt == 4)
-                        GameParams.religionType = Religion.ReligionType.CURSER;
-                    buttons[5].Text = "Religione\n" + optionButtons[(int)opt].Text;
-                    buttons[5].SetTextPosition();
-                    break;
-            }
-            foreach (Button b in optionButtons)
-                b.IsVisible = false;
+            actualChoice = actualChoiceFolder + @"\" + actualChoiceFiles[(int)opt] + ".ges";
+            ReadInfo();
+        }
+
+        void ReadInfo()
+        {
+            if(fileInfo == null)
+                fileInfo = new List<string>();
+            fileInfo.Clear();
+            fileInfo.Add("Impero " + Path.GetFileNameWithoutExtension(actualChoiceFolder));//Nome Impero
+            fileInfo.Add("Salvataggio: " + Path.GetFileNameWithoutExtension(actualChoice));//Nome File
+            fileInfo.Add(File.GetLastAccessTime(actualChoice).ToString());//Data ultimo salvataggio
         }
 
         /// <summary>
@@ -297,7 +296,7 @@ namespace GalacticEmpire
         int? GetOptionClicked()
         {
             int? option = null;
-            for(int i = 0; i < optionButtons.Count; i++)
+            for (int i = 0; i < optionButtons.Count; i++)
             {
                 if (optionButtons[i].WasPressed())
                 {
@@ -321,6 +320,14 @@ namespace GalacticEmpire
                 b.DrawButton(spriteBatch);
             foreach (Button b in optionButtons)
                 b.DrawButton(spriteBatch);
+
+            if (actualChoice != "")
+                for (int i = 0; i < fileInfo.Count; i++)
+                {
+                    int x = (int)font.MeasureString(fileInfo[i]).X + 10;
+                    int y = (int)font.MeasureString(fileInfo[i]).Y + 10;
+                    spriteBatch.DrawString(font, fileInfo[i], new Vector2(GraphicSettings.ScreenBounds.Width - x, 100 + i * y), Color.Yellow);
+                }
 
             spriteBatch.End();
         }

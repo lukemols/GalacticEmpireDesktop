@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace GalacticEmpireDesktop
+namespace GalacticEmpire
 {
 #if WINDOWS || LINUX
     /// <summary>

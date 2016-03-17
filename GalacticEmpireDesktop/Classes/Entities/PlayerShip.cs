@@ -49,8 +49,8 @@ namespace GalacticEmpire
         static int maxCargo;
         static public int MaxCargo { get { return maxCargo; } }
 
-        static PlayerPowerUp powerUps;
-        static public PlayerPowerUp PowerUps { get { return powerUps; } }
+        static List<PlayerPowerUp> powerUps;
+        static public List<PlayerPowerUp> PowerUps { get { return powerUps; } }
 
         static public bool IsMoving { get { return !(position.X == targetPosition.X && position.Z == targetPosition.Z); } }
 
@@ -63,10 +63,31 @@ namespace GalacticEmpire
             maxLife = life = startingLife;
             maxEnergy = energy = (float)startingEnergy;
             modelRotation = 0.0f;
-            money = 100000000;
-            radius = 2000;
+            money = 1000;
+            radius = 1500;
             speed = 10;
+            maxCargo = 500;
             actualSpeed = new Vector3();
+            products = new List<Product>();
+            powerUps = new List<PlayerPowerUp>();
+        }
+        static public void Initialize(Vector3 startingPosition, Vector3 targetPosition, int life, int maxLife, float energy, float maxEnergy,
+            int speed, int radius, int money, int maxCargo, List<Product> products, List<PlayerPowerUp> powerUps)
+        {
+            PlayerShip.targetPosition = targetPosition;
+            position = startingPosition;
+            PlayerShip.maxLife = maxLife;
+            PlayerShip.life = life;
+            PlayerShip.maxEnergy = maxEnergy;
+            PlayerShip.energy = energy;
+            modelRotation = 0.0f;
+            PlayerShip.money = money;
+            PlayerShip.radius = radius;
+            PlayerShip.speed = speed;
+            PlayerShip.maxCargo = maxCargo;
+            actualSpeed = new Vector3();
+            PlayerShip.products = products;
+            PlayerShip.powerUps = powerUps;
         }
 
         static public void Load(Game game)
