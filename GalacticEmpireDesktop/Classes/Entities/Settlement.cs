@@ -48,6 +48,11 @@ namespace GalacticEmpire
         List<Product> products;
         public List<Product> Products { get { return products; } }
 
+        /// <summary>
+        /// Costruttore dell'insediamento del giocatore
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="religion"></param>
         public Settlement(SettlementType type, Religion.ReligionType religion)
         {
             products = new List<Product>();
@@ -64,6 +69,15 @@ namespace GalacticEmpire
             //inhaGrowthRate = 1.5f;//
         }
 
+        /// <summary>
+        /// Costruttore dell'insedimento da utilizzare per la creazione degli imperi
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="money"></param>
+        /// <param name="inhabitants"></param>
+        /// <param name="defense"></param>
+        /// <param name="offense"></param>
+        /// <param name="religion"></param>
         public Settlement(SettlementType type, int money, int inhabitants, int defense, int offense, Religion.ReligionType religion)
         {
             products = new List<Product>();
@@ -75,6 +89,21 @@ namespace GalacticEmpire
             SetInitialRates(religion);
         }
 
+        /// <summary>
+        /// Costruttore dell'insediamento da salvataggio file
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="money"></param>
+        /// <param name="inhabitants"></param>
+        /// <param name="defense"></param>
+        /// <param name="offense"></param>
+        /// <param name="inhaRate"></param>
+        /// <param name="science"></param>
+        /// <param name="scienceRate"></param>
+        /// <param name="commerce"></param>
+        /// <param name="commerceRate"></param>
+        /// <param name="tecno"></param>
+        /// <param name="tecnoRate"></param>
         public Settlement(SettlementType type, int money, int inhabitants, int defense, int offense, float inhaRate,
             float science, float scienceRate, float commerce, float commerceRate, float tecno, float tecnoRate)
         {
@@ -90,6 +119,7 @@ namespace GalacticEmpire
             commerceGrowthRate = commerceRate;
             tecnoLevel = tecno;
             tecnoGrowthRate = tecnoRate;
+            products = new List<Product>();
         }
 
         private void SetInitialRates(Religion.ReligionType religion)
@@ -248,6 +278,28 @@ namespace GalacticEmpire
             }
             
             return retNeeds;
+        }
+
+        static public SettlementType GetSettlementTypeFromString(string settlementType)
+        {
+            Settlement.SettlementType type = Settlement.SettlementType.MILITARY;
+            switch (settlementType)
+            {
+                case "Community":
+                    type = Settlement.SettlementType.COMMUNITY;
+                    break;
+                case "Inhabited":
+                    type = Settlement.SettlementType.INHABITED;
+                    break;
+                case "Military":
+                    type = Settlement.SettlementType.MILITARY;
+                    break;
+                case "Capital":
+                default:
+                    type = Settlement.SettlementType.CAPITAL;
+                    break;
+            }
+            return type;
         }
     }
 }

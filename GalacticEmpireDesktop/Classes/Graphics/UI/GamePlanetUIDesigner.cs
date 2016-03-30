@@ -17,12 +17,13 @@ namespace GalacticEmpire
         static SpriteBatch spriteBatch;
 
         static List<Button> inhabitedButtons;
-        static List<Button> dishabitedButtons;
         static Button closeButton;
 
         static GraphicsDevice device;
         static Texture2D rectangle;
         static Rectangle relativeScreen;
+        
+        static QuantitySelectionItem selectionBox;
 
         static PanelState state;
         static int lastClickTime;
@@ -34,7 +35,6 @@ namespace GalacticEmpire
             relativeScreen = new Rectangle(100, 100, GraphicSettings.ScreenBounds.Width - 200, GraphicSettings.ScreenBounds.Height - 200);
             spriteBatch = (SpriteBatch)game.Services.GetService(typeof(SpriteBatch));
             inhabitedButtons = new List<Button>();
-            dishabitedButtons = new List<Button>();
 
             font = game.Content.Load<SpriteFont>(GUIFolder + "Consolas");
             bar = game.Content.Load<Texture2D>(GUIFolder + "Bar");
@@ -51,6 +51,7 @@ namespace GalacticEmpire
 
             rectangle.SetData(data);
             SetButtons();
+            CreateDefaultQuantitySelectionItem(game.Content);
 
             Initialize();
             //Carica le sottoschede del menu del pianeta
@@ -75,19 +76,26 @@ namespace GalacticEmpire
                 data[i] = Color.Yellow;
             txt.SetData(data);
 
+            /*
             string[] buttonsText = new string[] { "Commercia", "Rotta commerciale", "Regala", "Eventi", "Spia", "Attacca", "Ripara", "Ricarica" };
             string[] buttonsType = new string[] { "Commerce", "CommercialRoute", "Gift", "Events", "Spy", "Attack", "Repair", "Recharge" };
-            for (int i = 0; i < 8; i++)
+            for (int i = 0; i < buttonsText.Length; i++)
             {
                 int x = relativeScreen.X + relativeScreen.Width / 2 + (i % 2) * relativeScreen.Width / 4 + 10;
                 int y = relativeScreen.Y + relativeScreen.Height / 5 + (i / 2) * relativeScreen.Height / 5 + 5;
                 Rectangle r = new Rectangle(x, y, txt.Width, txt.Height);
                 inhabitedButtons.Add(new Button(r, buttonsText[i], buttonsType[i]));
-
             }
-
-            dishabitedButtons.Add(new Button(new Rectangle(relativeScreen.Width - (int)buttonDimensions.X - 10, relativeScreen.Y + 50, (int)buttonDimensions.X, (int)buttonDimensions.Y), "Terraforma", "Terraform"));
-            dishabitedButtons.Add(new Button(new Rectangle(relativeScreen.Width - (int)buttonDimensions.X - 10, relativeScreen.Y + 60 + (int)buttonDimensions.Y, (int)buttonDimensions.X, (int)buttonDimensions.Y), "Fonda colonia", "Found"));
+            */
+            string[] buttonsText = new string[] { "Commercia", "Regala", "Ripara", "Ricarica" };
+            string[] buttonsType = new string[] { "Commerce", "Gift", "Repair", "Recharge" };
+            for (int i = 0; i < buttonsText.Length; i++)
+            {
+                int x = relativeScreen.X + relativeScreen.Width / 2 + relativeScreen.Width / 4 + 10;
+                int y = relativeScreen.Y + relativeScreen.Height / 5 + i * relativeScreen.Height / 5 + 5;
+                Rectangle r = new Rectangle(x, y, txt.Width, txt.Height);
+                inhabitedButtons.Add(new Button(r, buttonsText[i], buttonsType[i]));
+            }
 
             foreach (Button b in inhabitedButtons)
             {
@@ -95,12 +103,29 @@ namespace GalacticEmpire
                 b.SetTextPosition();
                 b.SetTextColor(Color.Black);
             }
-            foreach (Button b in dishabitedButtons)
+        }
+
+        static void CreateDefaultQuantitySelectionItem(ContentManager Content)
+        {
+            //public QuantitySelectionItem(Texture2D objectImage, Texture2D pTexture, Texture2D mTexture, Texture2D btTexture,
+            //SpriteFont font, int max, int ppu)
+            string GUIFolder = GraphicSettings.GetGUIFolder();
+            Texture2D pTexture = Content.Load<Texture2D>(GUIFolder + "Plus");
+            Texture2D mTexture = Content.Load<Texture2D>(GUIFolder + "Minus");
+            Texture2D moneyIcon = Content.Load<Texture2D>(GUIFolder + "Money");
+
+            Vector2 buttonDimensions = new Vector2(pTexture.Width, pTexture.Width);
+
+            Color[] data = new Color[(int)(buttonDimensions.X * buttonDimensions.Y)];
+            Texture2D boxTexture = new Texture2D(device, (int)(buttonDimensions.X), (int)(buttonDimensions.Y));
+
+            for (int i = 0; i < data.Length; ++i)
             {
-                b.LoadTextureAndFont(txt, font);
-                b.SetTextPosition();
-                b.SetTextColor(Color.Black);
+                data[i] = Color.White;
             }
+            boxTexture.SetData(data);
+
+            selectionBox = new QuantitySelectionItem(moneyIcon, pTexture, mTexture, buttonTexture, boxTexture, font);
         }
 
 
@@ -130,22 +155,26 @@ namespace GalacticEmpire
                             }
                         }
                     }
-                    else
-                    {
-                        foreach (Button b in dishabitedButtons)
-                        {
-                            if (b.WasPressed())
-                            {
-                                button = b.Type;
-                            }
-                        }
-                    }
                     if (closeButton.WasPressed())
                         button = closeButton.Type;
                     break;
                 case PanelState.COMMERCE:
                     if (CommerceUIDesigner.ButtonClicked() == "CloseButton")
                         state = PanelState.WAIT;
+                    break;
+                case PanelState.GIFT:
+                    string s = selectionBox.CheckButtons();
+                    if (s == "CancelButton")
+                        state = PanelState.WAIT;
+                    else if (s == "OkButton")
+                    {
+                        int gift = selectionBox.TotalPrice;
+                        if(GameManager.PlayerEmpire != GameManager.ActualSystemOwner)
+                            GameRelationManager.CreateGiftEvent(GameManager.PlayerEmpire, GameManager.ActualSystemOwner, gift);
+                        PlayerShip.Money -= gift;
+                        GameSystemDesigner.ActualPlanet.PlanetSettlement.Money += gift;
+                        state = PanelState.WAIT;
+                    }
                     break;
             }
 
@@ -161,6 +190,12 @@ namespace GalacticEmpire
                 case "Commerce":
                     CommerceUIDesigner.LoadWindowComponents(GameSystemDesigner.ActualPlanet);
                     state = PanelState.COMMERCE;
+                    break;
+                case "Gift":
+                    int prize = 1;
+                    int max = PlayerShip.Money / prize;
+                    selectionBox.SetValues(max, prize);
+                    state = PanelState.GIFT;
                     break;
                 default:
                     state = PanelState.WAIT;
@@ -206,14 +241,16 @@ namespace GalacticEmpire
                     spriteBatch.DrawString(font, planet.Name, new Vector2(GraphicSettings.CenterScreen.X - font.MeasureString(planet.Name).X / 2, 110), Color.Red);
                     closeButton.DrawButton(spriteBatch);
 
-                    if (planet.PlanetSettlement != null)
-                        DrawIfInhabited(planet);
-                    else if (planet.IsHabitable)
-                        DrawIfHabitable(planet);
+                    DrawIfInhabited(planet);
                     break;
                 case PanelState.COMMERCE:
                     GameSystemDesigner.Draw();
                     CommerceUIDesigner.Draw();
+                    break;
+                case PanelState.GIFT:
+                    spriteBatch.Draw(rectangle, relativeScreen, Color.White);
+                    DrawIfInhabited(planet);
+                    selectionBox.DrawItem(spriteBatch);
                     break;
             }
 
@@ -227,7 +264,7 @@ namespace GalacticEmpire
 
             spriteBatch.DrawString(font, "Impero " + GameManager.ActualSystemOwner.EmpireName, new Vector2(GraphicSettings.CenterScreen.X - font.MeasureString("Impero " + GameManager.ActualSystemOwner.EmpireName).X / 2, 140), Color.Black);
             //Disegna livello scienza
-            spriteBatch.DrawString(font, "Livello scienza: " + LevelManager.ActualLevel(planet.PlanetSettlement.ScienceLevel).ToString() + " - " + planet.PlanetSettlement.ScienceLevel.ToString(), new Vector2(110, 180), Color.Black);
+            spriteBatch.DrawString(font, "Livello scienza: " + LevelManager.ActualLevel(planet.PlanetSettlement.ScienceLevel).ToString(), new Vector2(110, 180), Color.Black);
             spriteBatch.Draw(bar, new Vector2(110, 200), Color.Gray);
             spriteBatch.Draw(bar, new Rectangle(110, 200, (int)((float)bar.Width * LevelManager.PercentLevel(planet.PlanetSettlement.ScienceLevel)), bar.Height), Color.LimeGreen);
             //Disegna livello commercio
@@ -259,36 +296,6 @@ namespace GalacticEmpire
                 b.DrawButton(spriteBatch);
 
             
-        }
-
-
-        static private void DrawIfHabitable(Planet planet)
-        {
-            spriteBatch.DrawString(font, GameManager.ActualSystem.Name, new Vector2(GraphicSettings.CenterScreen.X - font.MeasureString(GameManager.ActualSystem.Name).X / 2, 140), Color.Black);
-
-            if (GameManager.ActualSystemOwner == null || GameManager.ActualSystemOwner == GameManager.PlayerEmpire)
-            {
-                //Risorse
-                spriteBatch.DrawString(font, "Risorse: " + planet.Resources.ToString("#,0."), new Vector2(110, 180), Color.Black);
-                //Disegna livello terrascore
-                spriteBatch.DrawString(font, "Terrascore: " + planet.Terrascore.ToString(), new Vector2(110, 230), Color.Black);
-                spriteBatch.Draw(bar, new Vector2(110, 250), Color.Gray);
-                Color barColor;
-                if (planet.Terrascore < 16)
-                    barColor = Color.Red;
-                else if (planet.Terrascore < 24)
-                    barColor = Color.Yellow;
-                else
-                    barColor = Color.LimeGreen;
-                spriteBatch.Draw(bar, new Rectangle(110, 250, bar.Width * planet.Terrascore / 32, bar.Height), barColor);
-                foreach (Button b in dishabitedButtons)
-                    b.DrawButton(spriteBatch);
-            }
-            else
-            {
-                string txt = "Questo pianeta non è colonizzabile poiché\nun altro impero è il proprietario del sistema.";
-                spriteBatch.DrawString(font, txt, new Vector2(GraphicSettings.CenterScreen.X - font.MeasureString(txt).X / 2, 180), Color.Black);
-            }
         }
     }
 }

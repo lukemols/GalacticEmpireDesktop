@@ -9,7 +9,7 @@ namespace GalacticEmpire
 {
     class GameWindow : Microsoft.Xna.Framework.DrawableGameComponent
     {
-        public enum GameState { GALAXY, SYSTEM, PLANET, PAUSED, FINISHED }
+        public enum GameState { GALAXY, SYSTEM, PLANET, PAUSED, FINISHED, TUTORIAL }
         SpriteBatch spriteBatch;
 
         static GameState lastState;
@@ -19,6 +19,8 @@ namespace GalacticEmpire
         int lastMinuteSave = 0;
         int autosaveIndex = 1;
         int lastClickTime = 0;
+
+        TutorialUIDesigner tutorial;
 
         SoundEffect enterPlanet;
 
@@ -30,7 +32,9 @@ namespace GalacticEmpire
         {
             spriteBatch = (SpriteBatch)Game.Services.GetService(typeof(SpriteBatch));
             lastState = GameState.GALAXY;
-            actualState = GameState.GALAXY;
+            //actualState = GameState.GALAXY;
+            actualState = GameState.TUTORIAL;
+            tutorial = new TutorialUIDesigner();
         }
 
         /// <summary>
@@ -49,7 +53,25 @@ namespace GalacticEmpire
 
             GameUIDesigner.Load(game);
             GamePlanetUIDesigner.Load(game);
+            GamePlanetDisabitedUIDesigner.Load(game);
             PauseDesigner.Load(game);
+            tutorial.Load(game.Content);
+        }
+
+        static public void SetState(GameState state)
+        {
+            if (state == GameState.GALAXY && GameManager.ActualSystem != null)
+            {
+                lastState = actualState;
+                actualState = state;
+                PlayerShip.SetPosition(GameManager.ActualSystem.SystemPosition);
+            }
+            else if (state == GameState.SYSTEM && GameManager.ActualSystem != null)
+            {
+                lastState = actualState;
+                actualState = state;
+                GameSystemDesigner.EnterSystem();
+            }
         }
         
         /// <summary>
@@ -69,6 +91,11 @@ namespace GalacticEmpire
 
             switch(actualState)
             {
+                case GameState.TUTORIAL:
+                    tutorial.Update();
+                    if (tutorial.IsFinished)
+                        actualState = GameState.GALAXY;
+                    break;
                 case GameState.PAUSED:
                     switch(PauseDesigner.ActionToPerform())
                     {
@@ -120,10 +147,16 @@ namespace GalacticEmpire
                     {
                         lastClickTime = 0;
                         actualState = GameState.PLANET;
-                        GamePlanetUIDesigner.Initialize();
-                        GameCommerceManager.EnterPlanet(GameSystemDesigner.ActualPlanet);
-                        if (GameSystemDesigner.ActualPlanet.PlanetSettlement != null)
+                        if(GameSystemDesigner.ActualPlanet.PlanetSettlement != null)
+                        {
+                            GamePlanetUIDesigner.Initialize();
+                            GameCommerceManager.EnterPlanet(GameSystemDesigner.ActualPlanet);
                             GamePlanetUIDesigner.WriteInhabitedButtons();
+                        }
+                        else
+                        {
+                            GamePlanetDisabitedUIDesigner.Initialize();
+                        }
                         if (GameParams.soundEnabled)
                             enterPlanet.Play();
                     }
@@ -136,27 +169,40 @@ namespace GalacticEmpire
                     }
                     break;
                 case GameState.PLANET:
-                    string bt = GamePlanetUIDesigner.ButtonClicked();
+                    string bt = "NONE";
+                    if(GameSystemDesigner.ActualPlanet.PlanetSettlement != null)
+                    {
+                        bt = GamePlanetUIDesigner.ButtonClicked();
+                        if (bt == "Repair")
+                        {
+                            int prize = GameCommerceManager.GetRepairPrize();
+                            if (PlayerShip.Money >= prize)
+                            {
+                                PlayerShip.Money -= prize;
+                                PlayerShip.RestoreLife();
+                                GamePlanetUIDesigner.WriteInhabitedButtons();
+                            }
+                        }
+                        else if (bt == "Recharge")
+                        {
+                            int prize = GameCommerceManager.GetRechargePrize();
+                            if (PlayerShip.Money >= prize)
+                            {
+                                PlayerShip.Money -= prize;
+                                PlayerShip.RestoreEnergy();
+                                GamePlanetUIDesigner.WriteInhabitedButtons();
+                            }
+                        }
+                    }
+                    else
+                    {
+                        bt = GamePlanetDisabitedUIDesigner.ButtonClicked();
+                    }
                     if (bt != "NONE" && lastClickTime > 10)
-                        lastClickTime = 0;
-                    else break;
-
-                    if (bt == "Repair")
-                    {
-                        PlayerShip.Money -= GameCommerceManager.GetRepairPrize();
-                        PlayerShip.RestoreLife();
-                        GamePlanetUIDesigner.WriteInhabitedButtons();
-                    }
-                    else if (bt == "Recharge")
-                    {
-                        PlayerShip.Money -= GameCommerceManager.GetRechargePrize();
-                        PlayerShip.RestoreEnergy();
-                        GamePlanetUIDesigner.WriteInhabitedButtons();
-                    }
-                    else if (bt == "CloseButton")
                     {
                         lastClickTime = 0;
-                        actualState = GameState.SYSTEM;
+                        if (bt == "CloseButton")
+                            actualState = GameState.SYSTEM;
                     }
                     break;
             }
@@ -174,6 +220,9 @@ namespace GalacticEmpire
         {
             switch (actualState)
             {
+                case GameState.TUTORIAL:
+                    tutorial.Draw(spriteBatch);
+                    break;
                 case GameState.PAUSED:
                     if (lastState == GameState.GALAXY)
                         GameGalaxyDesigner.Draw();
@@ -190,10 +239,13 @@ namespace GalacticEmpire
                     break;
                 case GameState.PLANET:
                     GameSystemDesigner.Draw();
-                    GamePlanetUIDesigner.Draw(GameSystemDesigner.ActualPlanet);
+                    if (GameSystemDesigner.ActualPlanet.PlanetSettlement != null)
+                        GamePlanetUIDesigner.Draw(GameSystemDesigner.ActualPlanet);
+                    else
+                        GamePlanetDisabitedUIDesigner.Draw(GameSystemDesigner.ActualPlanet);
                     break;
             }
-
+            if(actualState != GameState.TUTORIAL)
             GameUIDesigner.Draw();
         }
 

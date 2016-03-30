@@ -102,9 +102,10 @@ namespace GalacticEmpire
             }
         }
 
-        public void SetValues(int max, int ppu, Texture2D obj)
+        public void SetValues(int max, int ppu, Texture2D obj = null)
         {
-            objectTexture = obj;
+            if(obj != null)
+                objectTexture = obj;
             maxValue = max;
             pricePerUnit = ppu;
             value = 0;

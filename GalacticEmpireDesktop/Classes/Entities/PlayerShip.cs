@@ -67,12 +67,14 @@ namespace GalacticEmpire
             radius = 1500;
             speed = 10;
             maxCargo = 500;
+            defensiveArmy = 50;
+            offensiveArmy = 10;
             actualSpeed = new Vector3();
             products = new List<Product>();
             powerUps = new List<PlayerPowerUp>();
         }
         static public void Initialize(Vector3 startingPosition, Vector3 targetPosition, int life, int maxLife, float energy, float maxEnergy,
-            int speed, int radius, int money, int maxCargo, List<Product> products, List<PlayerPowerUp> powerUps)
+            int speed, int radius, int money, int maxCargo, int defensive, int offensive, List<Product> products, List<PlayerPowerUp> powerUps)
         {
             PlayerShip.targetPosition = targetPosition;
             position = startingPosition;
@@ -85,6 +87,8 @@ namespace GalacticEmpire
             PlayerShip.radius = radius;
             PlayerShip.speed = speed;
             PlayerShip.maxCargo = maxCargo;
+            defensiveArmy = defensive;
+            offensiveArmy = offensive;
             actualSpeed = new Vector3();
             PlayerShip.products = products;
             PlayerShip.powerUps = powerUps;
@@ -103,6 +107,51 @@ namespace GalacticEmpire
         static public void RestoreEnergy()
         {
             energy = maxEnergy;
+        }
+
+        static public bool AddNewPowerUp(PlayerPowerUp pup)
+        {
+            bool result = true;
+
+            foreach(PlayerPowerUp p in powerUps)
+            {//Se ha già quel potenziamento o ne ha uno di livello superiore torna false e non aggiungere nulla
+                if (p.Type == pup.Type && p.Level >= pup.Level)
+                    return false;
+            }
+            //Altrimenti aggiungilo e comportati di conseguenza
+            switch(pup.Type)
+            {
+                case PlayerPowerUp.PowerUpType.CARGO:
+                    maxCargo = 500 + 100 * pup.Level;
+                    break;
+                case PlayerPowerUp.PowerUpType.ENGINE:
+                    radius = 1500 + 150 * pup.Level;
+                    speed = 10 + (int)(2.5 * pup.Level);
+                    break;
+                case PlayerPowerUp.PowerUpType.LASER:
+                    offensiveArmy = 50 + 5 * pup.Level;
+                    break;
+                case PlayerPowerUp.PowerUpType.SHIELD:
+                    defensiveArmy = 50 + 5 * pup.Level;
+                    break;
+                case PlayerPowerUp.PowerUpType.ROCKET:
+                case PlayerPowerUp.PowerUpType.TERRAFORMER:
+                    break;
+            }
+            
+            powerUps.Add(pup);
+            return result;
+        }
+
+        static public int GetMaxPowerUpLevel(PlayerPowerUp.PowerUpType type)
+        {
+            int level = 0;
+            foreach(PlayerPowerUp pup in powerUps)
+            {
+                if (pup.Type == type && pup.Level > level)
+                    level = pup.Level;
+            }
+            return level;
         }
         
         static public void SetDestination(Vector3 target)

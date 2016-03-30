@@ -260,8 +260,7 @@ namespace GalacticEmpire
                                 int money = capitalPlanet.PlanetSettlement.Money;
                                 int lvl = LevelManager.ActualLevel(pmax.PlanetSettlement.ScienceLevel);
 
-                                int prize = GameActionsManager.TerraformPlanet(pmax, money, lvl);
-
+                                int prize = GameActionsManager.TerraformPlanet(pmax, money, lvl, true);
                                 capitalPlanet.PlanetSettlement.Money -= prize; //sottrai i soldi dalla capitale
                                 if (prize > 0)
                                     return true;

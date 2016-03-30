@@ -603,12 +603,58 @@ namespace GalacticEmpire
                 else if (xr.Name == "POWERUPS" && xr.NodeType == XmlNodeType.Element)
                     powerUps = ReadPlayerPowerUps(xr);
             }
-            PlayerShip.Initialize(position, target, life, maxLife, energy, maxEnergy, speed, radius, money, maxCargo, products, powerUps);
+            PlayerShip.Initialize(position, target, life, maxLife, energy, maxEnergy, speed, 
+                radius, money, maxCargo, defensive, offensive, products, powerUps);
         }
 
         static List<PlayerPowerUp> ReadPlayerPowerUps(XmlReader xr)
-        {
-            return new List<PlayerPowerUp>();
+        {/// POWERUP TYPE="SHIELD" LEVEL="1" />
+            List<PlayerPowerUp> pups = new List<PlayerPowerUp>();
+            if (xr.IsEmptyElement)
+                return pups;
+            while (xr.Read() && !(xr.Name == "POWERUPS" && xr.NodeType == XmlNodeType.EndElement))
+            {
+                if (xr.Name == "POWERUP")
+                {
+                    PlayerPowerUp.PowerUpType type = PlayerPowerUp.PowerUpType.CARGO;
+                    int level = 0;
+
+                    while (xr.MoveToNextAttribute())
+                    {
+                        switch (xr.Name)
+                        {
+                            case "LEVEL":
+                                level = xr.ReadContentAsInt();
+                                break;
+                            case "TYPE":
+                                switch(xr.Value)
+                                {
+                                    case "CARGO":
+                                        type = PlayerPowerUp.PowerUpType.CARGO;
+                                        break;
+                                    case "ENGINE":
+                                        type = PlayerPowerUp.PowerUpType.ENGINE;
+                                        break;
+                                    case "LASER":
+                                        type = PlayerPowerUp.PowerUpType.LASER;
+                                        break;
+                                    case "ROCKET":
+                                        type = PlayerPowerUp.PowerUpType.ROCKET;
+                                        break;
+                                    case "SHIELD":
+                                        type = PlayerPowerUp.PowerUpType.SHIELD;
+                                        break;
+                                    case "TERRAFORM":
+                                        type = PlayerPowerUp.PowerUpType.TERRAFORMER;
+                                        break;
+                                }
+                                break;
+                        }
+                    }
+                    pups.Add(new PlayerPowerUp(type, level));
+                }
+            }
+            return pups;
         }
 
         /// <summary>

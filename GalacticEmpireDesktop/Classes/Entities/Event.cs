@@ -26,5 +26,10 @@ namespace GalacticEmpire
             motivation = motive;
             eventPoints = points;
         }
+
+        public void AddPointsToEvent(int points)
+        {
+            eventPoints += points;
+        }
     }
 }

@@ -10,7 +10,6 @@ namespace GalacticEmpire
     static class CommerceUIDesigner
     {
         static SpriteFont font;
-        static Texture2D bar;
         static Texture2D inGameButton;
         static Texture2D buttonTexture;
         static Texture2D buttonClickedTexture;
@@ -51,7 +50,6 @@ namespace GalacticEmpire
             powerButtons = new List<CommerceButton<PlayerPowerUp>>();
 
             font = game.Content.Load<SpriteFont>(GUIFolder + "Consolas");
-            bar = game.Content.Load<Texture2D>(GUIFolder + "Bar");
             closeTexture = game.Content.Load<Texture2D>(GUIFolder + "Close");
             foodIcon = game.Content.Load<Texture2D>(GUIFolder + "/Icons/FoodIcon");
             toolIcon = game.Content.Load<Texture2D>(GUIFolder + "/Icons/ToolIcon");
@@ -313,12 +311,13 @@ namespace GalacticEmpire
 
         static void BuyOrSellItem()
         {
+            int prize = 0;
             if (selectedButton == "Buy")
             {
                 foreach (CommerceButton<Product> b in buyButtons)
                     if (b.IsSelected)
                     {
-                        int prize = selectionBox.TotalPrice;
+                        prize = selectionBox.TotalPrice;
                         int quantity = selectionBox.Value;
                         PlayerShip.Money -= prize;
                         PlayerShip.Products.Add(new Product(b.ButtonComponent.Type, quantity, b.ButtonComponent.Level));
@@ -336,7 +335,7 @@ namespace GalacticEmpire
                 foreach (CommerceButton<Product> b in sellButtons)
                     if (b.IsSelected)
                     {
-                        int prize = selectionBox.TotalPrice;
+                        prize = selectionBox.TotalPrice;
                         int quantity = selectionBox.Value;
                         PlayerShip.Money += prize;
                         planet.PlanetSettlement.Products.Add(new Product(b.ButtonComponent.Type, quantity, b.ButtonComponent.Level));
@@ -354,15 +353,25 @@ namespace GalacticEmpire
                 foreach (CommerceButton<PlayerPowerUp> b in powerButtons)
                     if (b.IsSelected)
                     {
-                        int prize = selectionBox.TotalPrice;
-                        PlayerShip.Money -= prize;
-                        PlayerShip.PowerUps.Add(new PlayerPowerUp(b.ButtonComponent.Type, b.ButtonComponent.Level));
-                        LoadInstrumentsButtons();
+                        prize = selectionBox.TotalPrice;
+                        if (PlayerShip.Money >= prize && PlayerShip.AddNewPowerUp(b.ButtonComponent))
+                        {
+                            PlayerShip.Money -= prize;
+                            PlayerShip.PowerUps.Add(new PlayerPowerUp(b.ButtonComponent.Type, b.ButtonComponent.Level));
+                            LoadInstrumentsButtons();
+                        }
                         break;
                     }
             }
             CleanLists(PlayerShip.Products);
             CleanLists(planet.PlanetSettlement.Products);
+
+            bool playerSell = false;
+            if (selectedButton == "Sell")
+                playerSell = true;
+
+            if (GameManager.PlayerEmpire != GameManager.ActualSystemOwner)
+                GameRelationManager.CreateCommerceEvent(GameManager.PlayerEmpire, GameManager.ActualSystemOwner, prize, playerSell);
         }
 
         static void UncheckButtons()

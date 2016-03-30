@@ -154,6 +154,8 @@ namespace GalacticEmpire
                 foreach (Planet p in ss.Planets)
                     if (p.PlanetSettlement != null)
                         playerCapital = p;
+            GameWindow.SetState(LoadGameClass.State);
+            GetActualPosition();
             isLoading = false;
         }
         
@@ -187,6 +189,24 @@ namespace GalacticEmpire
             }
 
             lastSecondUpdate = now;
+        }
+
+        static public void GetActualPosition()
+        {
+            foreach (SolarSystem ss in solarSystems)
+            {
+                if (ss.SystemPosition.X == PlayerShip.Position.X && ss.SystemPosition.Z == PlayerShip.Position.Z)
+                {
+                    actualSystem = ss;
+                    SystemOwner(); // ottieni l'impero proprietario del sistema
+                }
+            }
+        }
+
+        static public void SetActualSystemOwner(Empire e)
+        {
+            e.OwnedSystems.Add(actualSystem);
+            SystemOwner();
         }
 
         /// <summary>

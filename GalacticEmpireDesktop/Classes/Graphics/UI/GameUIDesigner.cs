@@ -102,8 +102,14 @@ namespace GalacticEmpire
 
             //Disegna i pulsanti sullo schermo
             foreach (Button b in OnScreenButtons)
-                if(!(b.Type == "ReturnToGalaxy" && GameWindow.ActualState != GameWindow.GameState.SYSTEM))
-                   b.DrawButton(spriteBatch);
+            {
+                if ((b.Type == "ReturnToGalaxy" && GameWindow.ActualState != GameWindow.GameState.SYSTEM))
+                    continue;
+                else if (b.Type == "CameraButton")
+                    continue;
+                else
+                    b.DrawButton(spriteBatch);
+            }
             
             // GUI relativa alla parte di gioco nel sistema solare
             if (GameWindow.ActualState == GameWindow.GameState.SYSTEM)
